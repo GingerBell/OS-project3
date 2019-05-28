@@ -9,6 +9,9 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
+import java.util.logging.Logger;
+import java.util.logging.Level;
+
 public class BlockDatabaseServer {
     private Server server;
 
@@ -40,13 +43,16 @@ public class BlockDatabaseServer {
     }
 
     public static void main(String[] args) throws IOException, JSONException, InterruptedException {
+        // turn off logging for a package to prevent it from flooding the terminal
+        Logger.getLogger("io.grpc.netty.NettyServerTransport").setLevel(Level.OFF);
+
         JSONObject config = Util.readJsonFile("config.json");
         config = (JSONObject)config.get("1");
         String address = config.getString("ip");
         int port = Integer.parseInt(config.getString("port"));
         String dataDir = config.getString("dataDir");
 
-        DatabaseEngine.setup(dataDir);
+        DatabaseEngine.setup(dataDir, 50);
 
         final BlockDatabaseServer server = new BlockDatabaseServer();
         server.start(address, port);

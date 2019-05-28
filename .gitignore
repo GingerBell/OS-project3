@@ -1,0 +1,5 @@
+*.class
+*.DS_Store
+*.swp
+blockdb_java/dependency-reduced-pom.xml
+blockdb_java/target/*
