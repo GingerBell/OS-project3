@@ -6,6 +6,8 @@ import java.util.HashMap;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.channels.FileChannel;
 
 public class DatabaseEngine {
     private static DatabaseEngine instance = null;
@@ -91,8 +93,7 @@ public class DatabaseEngine {
     // initialize the database with json files and log.txt
     private void initialize() {
         File file = new File(dataDir + "log.txt");
-        if (!file.getParentFile().isDirectory())
-            file.getParentFile().mkdirs();
+        // clean start
         if (!file.exists()) {
             try (FileWriter writer = new FileWriter(file)) {
                 writer.write("1\n");
@@ -101,6 +102,7 @@ public class DatabaseEngine {
             }
             return;
         }
+
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line = reader.readLine();
             blockId = Integer.parseInt(line);
@@ -109,14 +111,36 @@ public class DatabaseEngine {
             return;
         }
 
-        file = new File(dataDir + blockId + ".json");
-        if (file.exists()) {
+        // if the previous process was killed before copying log_ to log in flushToBlock
+        File file_ = new File(dataDir + "log_.txt");
+        if (file_.exists()) {
+            System.out.println("The previous process was killed before copying log_ to log in flushToBlock. Recopying.");
+            blockId ++;
+            try (FileWriter writer = new FileWriter(dataDir + "log_.txt")) {
+                writer.write(blockId + "\n");
+            } catch (IOException e) {
+                System.out.println("Cannot write to file " + dataDir + "log_.txt");
+                return;
+            }
+            try {
+                Files.move(Paths.get(dataDir + "log_.txt"), Paths.get(dataDir + "log.txt"), StandardCopyOption.ATOMIC_MOVE);
+            } catch (IOException e) {
+                System.out.println("Cannot replace log.txt with log_.txt.");
+                return;
+            }
+        }
+
+        // if the previous process was killed before finishing writing to blockId.json
+        File fileJson = new File(dataDir + blockId + ".json");
+        if (fileJson.exists()) {
+            System.out.println("The previous process was killed before finishing writing to blockId.json. Reflushing to block.");
             if (!flushToBlock()) {
                 System.out.println("Cannot flush to block. Database initialization failed.");
                 return;
             }
         }
 
+        // update the database using transaction records in the block files
         for (int i = 1; i < blockId; i ++) {
             String json;
             try {
@@ -144,22 +168,51 @@ public class DatabaseEngine {
                 }
             }
         }
+
+        // update the database using log file
+        long startPoint = 0;
+        String line;
         try (BufferedReader reader = new BufferedReader(new FileReader(dataDir + "log.txt"))) {
-            String line = reader.readLine();
-            while ((line = reader.readLine()) != null) {
+            line = reader.readLine();
+            startPoint += line.getBytes().length + 1;
+            line = reader.readLine();
+            String nextLine;
+            while ((nextLine = reader.readLine()) != null && line != null) {
+                startPoint += line.getBytes().length + 1;
                 Transaction.Builder transaction = Transaction.newBuilder();
-                if (!logLineToTransactionBuilder(line, transaction))
+                if (!logLineToTransactionBuilder(line, transaction)) {
+                    System.out.println("Incomplete record in log file. Database initialization failed.");
                     return;
+                }
                 if (!updateWithTransaction(transaction.build())) {
                     System.out.println("Inconsistent record in log file. Database initialization failed.");
                     return;
                 }
                 logLength ++;
+                line = nextLine;
             }
+
         } catch (IOException e) {
             System.out.println("Cannot read file " + dataDir + "log.txt");
             return;
         }
+
+        // the last line of log.txt may be incomplete, need to delete it if so
+        Transaction.Builder transaction = Transaction.newBuilder();
+        if (!logLineToTransactionBuilder(line, transaction)) {
+            System.out.println("The last record is incomplete in log file. Need to be deleted.");
+            try (FileChannel outChan = new FileOutputStream(dataDir + "log.txt", true).getChannel()) {
+                outChan.truncate(startPoint);
+            } catch (IOException e) {
+                System.out.println("Cannot truncate file log.txt.");
+            }
+            return;
+        }
+        if (!updateWithTransaction(transaction.build())) {
+            System.out.println("Inconsistent record in log file. Database initialization failed.");
+        }
+        logLength ++;
+
     }
 
     public static void setup(String dataDir, int N) {
@@ -210,10 +263,16 @@ public class DatabaseEngine {
         }
 
         blockId ++;
-        try (FileWriter writer = new FileWriter(dataDir + "log.txt")) {
+        try (FileWriter writer = new FileWriter(dataDir + "log_.txt")) {
             writer.write(blockId + "\n");
         } catch (IOException e) {
-            System.out.println("Cannot write to file " + dataDir + "log.txt");
+            System.out.println("Cannot write to file " + dataDir + "log_.txt");
+            return false;
+        }
+        try {
+            Files.move(Paths.get(dataDir + "log_.txt"), Paths.get(dataDir + "log.txt"), StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            System.out.println("Cannot replace log.txt with log_.txt.");
             return false;
         }
         logLength = 0;
