@@ -19,34 +19,35 @@ public class DatabaseEngine {
     // helper function to convert a line in the log file to Transaction.Builder
     private boolean logLineToTransactionBuilder(String line, Transaction.Builder transaction) {
         String[] splitLine = line.split(" ");
-        if (splitLine.length <= 0) {
-            System.out.println("Unexpected empty line in " + dataDir + "log.txt");
+
+        if (splitLine.length == 0 || !splitLine[splitLine.length - 1].startsWith(".")) {
+            System.out.println("Unexpected line in " + dataDir + "log.txt");
             return false;
         }
         switch (splitLine[0]) {
            case "PUT":
-                if (splitLine.length != 3) {
+                if (splitLine.length != 4) {
                     System.out.println("PUT transaction records should be in format: PUT userID value.");
                     return false;
                 }
                 transaction.setType(Transaction.Types.PUT).setUserID(splitLine[1]).setValue(Integer.parseInt(splitLine[2]));
                 break;
             case "DEPOSIT":
-                if (splitLine.length != 3) {
+                if (splitLine.length != 4) {
                     System.out.println("DEPOSIT transaction records should be in format: DEPOSIT userID value.");
                     return false;
                 }
                 transaction.setType(Transaction.Types.DEPOSIT).setUserID(splitLine[1]).setValue(Integer.parseInt(splitLine[2]));
                 break;
             case "WITHDRAW":
-                if (splitLine.length != 3) {
+                if (splitLine.length != 4) {
                     System.out.println("WITHDRAW transaction records should be in format: WITHDRAW userID value.");
                     return false;
                 }
                 transaction.setType(Transaction.Types.WITHDRAW).setUserID(splitLine[1]).setValue(Integer.parseInt(splitLine[2]));
                 break;
             case "TRANSFER":
-                if (splitLine.length != 4) {
+                if (splitLine.length != 5) {
                     System.out.println("TRANSFER transaction records should be in format: TRANSFER fromID toID value.");
                     return false;
                 }
@@ -297,7 +298,7 @@ public class DatabaseEngine {
             return false;
 
         try (FileWriter writer = new FileWriter(dataDir + "log.txt", true)) {
-            writer.write("PUT " + userId + " " + value + "\n");
+            writer.write("PUT " + userId + " " + value + " .\n");
         } catch (IOException e) {
             System.out.println("Cannot write to file " + dataDir + "log.txt");
             return false;
@@ -314,7 +315,7 @@ public class DatabaseEngine {
             return false;
 
         try (FileWriter writer = new FileWriter(dataDir + "log.txt", true)) {
-            writer.write("DEPOSIT " + userId + " " + value + "\n");
+            writer.write("DEPOSIT " + userId + " " + value + " .\n");
         } catch (IOException e) {
             System.out.println("Cannot write to file " + dataDir + "log.txt");
             return false;
@@ -333,7 +334,7 @@ public class DatabaseEngine {
             return false;
 
         try (FileWriter writer = new FileWriter(dataDir + "log.txt", true)) {
-            writer.write("WITHDRAW " + userId + " " + value + "\n");
+            writer.write("WITHDRAW " + userId + " " + value + " .\n");
         } catch (IOException e) {
             System.out.println("Cannot write to file " + dataDir + "log.txt");
             return false;
@@ -347,13 +348,17 @@ public class DatabaseEngine {
     }
 
     public boolean transfer(String fromId, String toId, int value) {
+        if (fromId.equals(toId)) {
+            return false;
+        }
+
         int fromBalance = getOrZero(fromId);
         int toBalance = getOrZero(toId);
         if (value < 0 || fromBalance - value < 0)
             return false;
 
         try (FileWriter writer = new FileWriter(dataDir + "log.txt", true)) {
-            writer.write("TRANSFER " + fromId + " " + toId + " " + value + "\n");
+            writer.write("TRANSFER " + fromId + " " + toId + " " + value + " .\n");
         } catch (IOException e) {
             System.out.println("Cannot write to file " + dataDir + "log.txt");
             return false;
