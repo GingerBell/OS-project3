@@ -198,21 +198,22 @@ public class DatabaseEngine {
         }
 
         // the last line of log.txt may be incomplete, need to delete it if so
-        Transaction.Builder transaction = Transaction.newBuilder();
-        if (!logLineToTransactionBuilder(line, transaction)) {
-            System.out.println("The last record is incomplete in log file. Need to be deleted.");
-            try (FileChannel outChan = new FileOutputStream(dataDir + "log.txt", true).getChannel()) {
-                outChan.truncate(startPoint);
-            } catch (IOException e) {
-                System.out.println("Cannot truncate file log.txt.");
+        if (line != null) {
+            Transaction.Builder transaction = Transaction.newBuilder();
+            if (!logLineToTransactionBuilder(line, transaction)) {
+                System.out.println("The last record is incomplete in log file. Need to be deleted.");
+                try (FileChannel outChan = new FileOutputStream(dataDir + "log.txt", true).getChannel()) {
+                    outChan.truncate(startPoint);
+                } catch (IOException e) {
+                    System.out.println("Cannot truncate file log.txt.");
+                }
+                return;
             }
-            return;
+            if (!updateWithTransaction(transaction.build())) {
+                System.out.println("Inconsistent record in log file. Database initialization failed.");
+            }
+            logLength ++;
         }
-        if (!updateWithTransaction(transaction.build())) {
-            System.out.println("Inconsistent record in log file. Database initialization failed.");
-        }
-        logLength ++;
-
     }
 
     public static void setup(String dataDir, int N) {
