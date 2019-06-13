@@ -4,3 +4,4 @@
 blockdb_java/dependency-reduced-pom.xml
 blockdb_java/target/*
 *log.txt
+*.pdf

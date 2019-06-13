@@ -157,7 +157,7 @@ func main() {
 	var names [N] string
 
 	for i := 0; i < N; i++ {
-		names[i] = fmt.Sprintf("user_%d", rand.Int63())
+		names[i] = fmt.Sprintf("user%04d", rand.Int31n(10000))
 	}
 
 	for i := 0; i < N; i++ {

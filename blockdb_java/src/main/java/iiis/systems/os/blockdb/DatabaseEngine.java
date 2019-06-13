@@ -296,7 +296,7 @@ public class DatabaseEngine {
     public boolean put(String userId, int value) {
         if (value < 0)
             return false;
-        if (userId.length() != 8 || userId.matches("[a-zA-Z0-9]*"))
+        if (userId.length() != 8 || !userId.matches("[a-zA-Z0-9]*"))
             return false;
 
         try (FileWriter writer = new FileWriter(dataDir + "log.txt", true)) {
@@ -315,7 +315,7 @@ public class DatabaseEngine {
     public boolean deposit(String userId, int value) {
         if (value < 0)
             return false;
-        if (userId.length() != 8 || userId.matches("[a-zA-Z0-9]*"))
+        if (userId.length() != 8 || !userId.matches("[a-zA-Z0-9]*"))
             return false;
 
         try (FileWriter writer = new FileWriter(dataDir + "log.txt", true)) {
@@ -336,7 +336,7 @@ public class DatabaseEngine {
         int balance = getOrZero(userId);
         if (value < 0 || balance - value < 0)
             return false;
-        if (userId.length() != 8 || userId.matches("[a-zA-Z0-9]*"))
+        if (userId.length() != 8 || !userId.matches("[a-zA-Z0-9]*"))
             return false;
 
         try (FileWriter writer = new FileWriter(dataDir + "log.txt", true)) {
@@ -357,7 +357,7 @@ public class DatabaseEngine {
         if (fromId.equals(toId)) {
             return false;
         }
-        if (fromId.length() != 8 || fromId.matches("[a-zA-Z0-9]*") || toId.length() != 8 || toId.matches("[a-zA-Z0-9]*"))
+        if (fromId.length() != 8 || !fromId.matches("[a-zA-Z0-9]*") || toId.length() != 8 || !toId.matches("[a-zA-Z0-9]*"))
             return false;
 
         int fromBalance = getOrZero(fromId);

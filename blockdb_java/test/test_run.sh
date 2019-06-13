@@ -23,48 +23,48 @@ sleep 1
 
 echo "Step 1: Initialize account"
 for I in `seq 0 9`; do
-	go run ./test/test_client.go -T=PUT -user=TEST---$I -value=10
+	go run ./test/test_client.go -T=PUT -user=TESTAAA$I -value=10
 done
 echo "Check value: expecting value=10"
-go run ./test/test_client.go -T=GET -user=TEST---5
+go run ./test/test_client.go -T=GET -user=TESTAAA5
 
 echo "Check LogLength: expecting value=10"
 go run ./test/test_client.go -T=LogLength
 
 echo "Step 2: Try deposit"
 for I in `seq 0 9`; do
-	go run ./test/test_client.go -T=DEPOSIT -user=TEST---$I -value=5
+	go run ./test/test_client.go -T=DEPOSIT -user=TESTAAA$I -value=5
 done
 echo "Check value: expecting value=15"
-go run ./test/test_client.go -T=GET -user=TEST---5
+go run ./test/test_client.go -T=GET -user=TESTAAA5
 
 echo "Step 3: Try transfer"
 for I in `seq 0 9`; do
-	go run ./test/test_client.go -T=TRANSFER -from=TEST---$I -to=TEST--TX  -value=10
+	go run ./test/test_client.go -T=TRANSFER -from=TESTAAA$I -to=TESTAATX  -value=10
 done
 echo "Check value: expecting value=100"
-go run ./test/test_client.go -T=GET -user=TEST--TX
+go run ./test/test_client.go -T=GET -user=TESTAATX
 
 echo "Step 4: Try transfer again"
 for I in `seq 0 9`; do
-	go run ./test/test_client.go -T=TRANSFER -from=TEST--TX -to=TEST---$I  -value=5
+	go run ./test/test_client.go -T=TRANSFER -from=TESTAATX -to=TESTAAA$I  -value=5
 done
 echo "Check value: expecting value=50"
-go run ./test/test_client.go -T=GET -user=TEST--TX
+go run ./test/test_client.go -T=GET -user=TESTAATX
 
 echo "Step 5: Try withdraw"
 for I in `seq 0 9`; do
-	go run ./test/test_client.go -T=WITHDRAW -user=TEST---$I  -value=5
+	go run ./test/test_client.go -T=WITHDRAW -user=TESTAAA$I  -value=5
 done
 echo "Check value: expecting value=5"
-go run ./test/test_client.go -T=GET -user=TEST---2
+go run ./test/test_client.go -T=GET -user=TESTAAA2
 
 echo "Step 5: Try overdraft"
 for I in `seq 0 9`; do
-	go run ./test/test_client.go -T=WITHDRAW -user=TEST---$I  -value=10
+	go run ./test/test_client.go -T=WITHDRAW -user=TESTAAA$I  -value=10
 done
 echo "Check value: expecting value=5"
-go run ./test/test_client.go -T=GET -user=TEST---2
+go run ./test/test_client.go -T=GET -user=TESTAAA2
 
 echo "Check LogLength: expecting value<=50"
 go run ./test/test_client.go -T=LogLength
@@ -74,7 +74,7 @@ go run ./test/test_client.go -T=LogLength
 #sleep 10;
 
 echo "Check value again: expecting value=5"
-go run ./test/test_client.go -T=GET -user=TEST---2
+go run ./test/test_client.go -T=GET -user=TESTAAA2
 
 
 echo "Test completed. Please verify JSON block output with test_1.json ."
